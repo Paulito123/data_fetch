@@ -1,4 +1,4 @@
-# data_extractors_to_excel
-Some scripts that come in handy when in need of extracting quote data from exchanges or data providers into excel files.
+# data_extractors
+Lightweight framework for downloading stock data from alpha vantage. More data providers are still to be added.
 
-To be completed...
+More information later...
