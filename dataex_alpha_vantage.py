@@ -86,7 +86,7 @@ max_calls_per_min = 5
 #               ['DIS.xlsx', 'DIS', ['30min']]
 #               ]
 
-object_list = [['AAPL.xlsx', 'AAPL', ['1min', '5min', '15min', '30min', '60min']]
+object_list = [['AAPL.xlsx', 'AAPL', ['1min']]
                ]
 
 # execute the data gatherer...
