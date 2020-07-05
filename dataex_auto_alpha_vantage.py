@@ -22,7 +22,7 @@ from alpha_vantage.timeseries import TimeSeries
 from datetime import datetime, timedelta
 from config import config
 from df_helpers import DfHelpers
-from df_ftp_fetch import FTPFetch
+from tickers import Tickers
 
 import dateutil.parser as dp
 import urllib.request as request
@@ -31,133 +31,9 @@ import shutil
 import time
 
 
-def index_file_to_dict(index_file):
-    """ Read a csv into a dictionary """
-    try:
-        symbol_dict = {}
-        with open(index_file, 'r') as fl:
-            lines = fl.readlines()
-            for line in lines:
-                cols = line.split(',')
-                t_symbol = cols[0]
-                t_last_upd_date = dp.parse(cols[1]).isoformat()
-                t_status = cols[2].rstrip()
-                if t_symbol not in symbol_dict:
-                    symbol_dict[t_symbol] = [t_last_upd_date, t_status]
-                else:
-                    print('Error: symbol [' + t_symbol + '] was being processed multiple times...')
-        print('index_file_to_dict successfully executed')
-    except:
-        symbol_dict = {}
-        print('Error: symboldict not filled...')
-    return symbol_dict
 
 
-def dict_to_index_file(index_file, backup_file_template, ix_dict):
-    """ write an updated dict to a new index file and backup the old one """
-    # backup old index file
-    timestr = time.strftime("%Y%m%d%H%M%S")
-    backup_file = backup_file_template + '_' + timestr
-    os.replace(index_file, backup_file)
 
-    try:
-        with open(index_file, 'w+') as ixf:
-            for symbol in ix_dict:
-                ixf.write('{},{},{}'.format(symbol, ix_dict[symbol][0], ix_dict[symbol][1]))
-        print('---Index file rewritten---')
-    except:
-        print('Error: index file could not be initiated')
-
-
-def initiate_nq_index_file(index_file, nasdaq_file, genesis_date='2000-01-01T00:00:00.000000'):
-    """ If no index file exists, create it and initiate it.  """
-    # Create and fill the index file
-    try:
-        with open(index_file, 'w+') as ixf:
-            with open(nasdaq_file, 'r') as ndf:
-                lines = ndf.readlines()
-                for line in lines:
-                    fields = line.split('|')
-                    symbol = fields[0]
-                    if symbol == 'Symbol' or symbol[0:18] == 'File Creation Time':
-                        continue
-                    else:
-                        ixf.write('{},{},init\n'.format(symbol, genesis_date))
-        print('---Index file initiated---')
-        return True
-    except:
-        print('Error: index file could not be initiated')
-        return False
-
-
-def fetch_timeseries_alpha_vantage(api_key, ticker_symbol, interval, file_path):
-    """Fetch data for 1 symbol and timeframe, and write it to a sheet in an existing or not yet existing excel file."""
-    timestr = time.strftime("%Y%m%d%H%M%S")
-    fq_filename = file_path + '/' + ticker_symbol + '_' + interval + '_' + timestr
-
-    # define exchange bridge
-    ts = TimeSeries(key=api_key, output_format='pandas')
-
-    # try to fetch data and write to excel
-    try:
-        data, meta_data = ts.get_intraday(symbol=ticker_symbol, interval=interval, outputsize='full')
-        DfHelpers.print_timestamped_text('Finished [' + ticker_symbol + ':' + interval + '] successfully.')
-        data.to_csv(fq_filename)
-        return True
-    except:
-        DfHelpers.print_timestamped_text('Issue with interval [' + interval + '] for [' + ticker_symbol + ']!!!')
-        return False
-
-
-def append_dl_stats(stats_file_path, api_key_index, date, nr_of_calls):
-    """Append a line to dl_stats file"""
-    try:
-        with open(stats_file_path, 'a') as fd:
-            fd.write('{},{},{}'.format(api_key_index, date, nr_of_calls))
-        print("---Stats written to stats file---")
-        return True
-    except:
-        print("Error: cannot write to stats file.")
-        return False
-
-
-def fetch_dl_stats(stats_file, hours_back):
-    """Returns counter information of previous download sessions"""
-    output_dict = {}
-    try:
-        header_skipped = 0
-        threshold_dt = datetime.now() - timedelta(hours=hours_back, minutes=1)
-        with open(stats_file, 'r') as fl:
-            lines = fl.readlines()
-            for line in lines:
-                # Skip first line and last empty line
-                if header_skipped == 0 or len(line.strip()) == 0:
-                    header_skipped = 1
-                    continue
-                cols = line.split(',')
-                # evaluate the new datetime and sum the calls
-                t_index = int(cols[0].rstrip())
-                t_new = dp.parse(cols[1])
-                nr_new = int(cols[2].rstrip())
-
-                if threshold_dt < t_new:
-                    if t_index in output_dict:
-                        t_old = dp.parse(output_dict[t_index][0])
-                        last_date = t_old if t_old < t_new else t_new
-                        sum_calls = output_dict[t_index][1] + nr_new
-                        output_dict[t_index] = [last_date.isoformat(), sum_calls]
-                    else:
-                        output_dict[t_index] = [cols[1], nr_new]
-        print('---dl_stats dictionary created---')
-    except:
-        print('Error: no dl_stats dictionary could be made...')
-        output_dict = {}
-
-    if len(output_dict) == 0:
-        for i in range(0, len(config.api_key_list_single)):
-            output_dict[i] = ['2000-01-01T00:00:00.000000', 0]
-
-    return output_dict
 
 
 def auto_load_nasdaq_hist(stats_file_base, exchange, path_out, index_file, backup_file_template, max_calls_per_min,
@@ -271,7 +147,7 @@ def main():
     # Test if the index file exists...
     if not os.path.isfile(index_file):
         # Check if nasdaq file exists, if not > try to fetch it from ftp server.
-        if FTPFetch.fetch_nq_ticker_file('ftp://ftp.nasdaqtrader.com/SymbolDirectory/nasdaqlisted.txt', nasdaq_file):
+        if Tickers.fetch_nq_ticker_file('ftp://ftp.nasdaqtrader.com/SymbolDirectory/nasdaqlisted.txt', nasdaq_file):
             # Nasdaq file successfully fetched > initiate index file if needed.
             if initiate_nq_index_file(index_file, nasdaq_file, genesis_date):
                 # Use the index file to start fetching data...
