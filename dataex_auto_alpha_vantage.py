@@ -20,7 +20,6 @@
 ###############################################################################
 from alpha_vantage.timeseries import TimeSeries
 from datetime import datetime, timedelta
-from config import config
 from df_helpers import DfHelpers
 from tickers import Tickers
 

@@ -57,13 +57,8 @@ class Tickers:
             h.print_timestamped_text("ticker file [{}] does not exist.".format(ticker_file))
             return False
 
-        # Check if db exists.
-        if not os.path.isfile(db_file):
-            h.print_timestamped_text("database file [{}] does not exist.".format(db_file))
-            return False
-
         try:
-            # Open the database
+            # Open the database, if it doesn't exist, create it.
             with TinyDB(db_file) as db:
                 # Open the ticker table
                 ticker_table = db.table(ticker_db_name)
@@ -90,10 +85,12 @@ class Tickers:
                                      'last_update_date': '2000-01-01T00:00:00.000000',
                                      'last_update_date_epoch': dp.parse('2000-01-01T00:00:00.000000').timestamp(),
                                      'last_status': 'init'})
-                                h.print_timestamped_text('Symbol [{}] added to database.'.format(symbol))
+                                h.print_timestamped_text('Symbol [{}] added.'.format(symbol))
+                            else:
+                                h.print_timestamped_text('Symbol [{}] already exists.'.format(symbol))
             return True
         except:
-            h.print_timestamped_text("Error: cannot open database.")
+            h.print_timestamped_text("Error: cannot open or create database.")
             return False
 
 

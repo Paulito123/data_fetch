@@ -1,6 +1,7 @@
 config.py
 venv
 test*
+create_config_db.py
 /config/__pycache__/config.cpython-36.pyc
 /__pycache__/tickers.cpython-36.pyc
 /__pycache__/df_helpers.cpython-36.pyc

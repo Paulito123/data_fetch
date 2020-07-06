@@ -20,7 +20,6 @@
 ###############################################################################
 from alpha_vantage.timeseries import TimeSeries
 from datetime import datetime, timedelta
-from config import config
 from df_helpers import DfHelpers
 from tinydb import TinyDB, Query
 from tickers import Tickers
@@ -32,6 +31,11 @@ import shutil
 import time
 
 class DownloadStats:
+
+    #todo:
+    # - Method that adds latest dl stats
+    # - Method that returns calls left for a key
+
 
     @staticmethod
     def append_dl_stats(stats_file_path, api_key_index, date, nr_of_calls):
