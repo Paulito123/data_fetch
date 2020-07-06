@@ -1,3 +1,13 @@
 config.py
 venv
 test*
+/config/__pycache__/config.cpython-36.pyc
+/__pycache__/tickers.cpython-36.pyc
+/__pycache__/df_helpers.cpython-36.pyc
+/.vs/config
+/.vs/data_fetch/v15
+/.vs/VSWorkspaceState.json
+/.vs/slnx.sqlite
+/.vs/launch.vs.json
+/data_fetch.sln
+/data_fetch.pyproj

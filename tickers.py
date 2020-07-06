@@ -25,8 +25,8 @@ import shutil
 import urllib.request as request
 import os.path
 from contextlib import closing
-from tinydb import TinyDB, Query
-from df_helpers import DfHelpers
+from tinydb import *
+from df_helpers import DfHelpers as h
 
 
 class Tickers:
@@ -50,15 +50,15 @@ class Tickers:
 
     @staticmethod
     def nasdaq_ticker_file_to_db_sync(ticker_file, db_file, ticker_db_name):
-        ''''''
+        ''' Update the ticker database with the latest tickers '''
         # Check if ticker file exists.
         if not os.path.isfile(ticker_file):
-            DfHelpers.print_timestamped_text("ticker file [{}] does not exist.".format(ticker_file))
+            h.print_timestamped_text("ticker file [{}] does not exist.".format(ticker_file))
             return False
 
         # Check if db exists.
         if not os.path.isfile(db_file):
-            DfHelpers.print_timestamped_text("database file [{}] does not exist.".format(db_file))
+            h.print_timestamped_text("database file [{}] does not exist.".format(db_file))
             return False
 
         try:
@@ -81,12 +81,50 @@ class Tickers:
                         else:
                             # Check if symbol exists in DB
                             qy = Query()
-                            res = ticker_table.search(qy.symbol == symbol)
+                            res = ticker_table.search(qy.ticker == symbol)
                             if len(res) == 0:
                                 # Symbol does not exist, therefore insert it
                                 ticker_table.insert({'ticker': symbol, 'last_update_date': '2000-01-01T00:00:00.000000',
                                                      'last_status': 'init'})
+                                h.print_timestamped_text('Symbol [{}] added to database.'.format(symbol))
             return True
         except:
-            DfHelpers.print_timestamped_text("Error: cannot open database.")
+            h.print_timestamped_text("Error: cannot open database.")
+            return False
+
+
+    @staticmethod
+    def update_ticker_status(db_file, ticker_table_name, ticker_info):
+        ''' Update the ticker db with ticker info. Requires a dict with following elements: ticker, last_update_date, last_status'''
+
+        # Check if db exists.
+        if not os.path.isfile(db_file):
+            h.print_timestamped_text("database file [{}] does not exist.".format(db_file))
+            return False
+
+		# Check if ticker info is well formatted.
+        if 'ticker' not in ticker_info:
+            print('Error: missing element [ticker] in ticker_info.')
+        elif 'last_update_date' not in ticker_info:
+            print('Error: missing element [last_update_date] in ticker_info.')
+        elif 'last_status' not in ticker_info:
+            print('Error: missing element [last_status] in ticker_info.')
+
+        try:
+            # Open the database
+            with TinyDB(db_file) as db:
+                # Open the ticker table and create query object
+                ticker_table = db.table(ticker_table_name)
+                qy = Query()
+
+                # Upsert the new ticker info
+                ticker_table.upsert({'ticker': ticker_info['ticker'], 
+                                     'last_update_date': ticker_info['last_update_date'], 
+                                     'last_status': ticker_info['last_status']}, qy.ticker == ticker_info['ticker'])
+                
+                h.print_timestamped_text('Symbol [{}] upserted.'.format(ticker_info['ticker']))
+
+            return True
+        except:
+            h.print_timestamped_text("Error: cannot open database.")
             return False

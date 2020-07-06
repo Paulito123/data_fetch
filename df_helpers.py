@@ -25,14 +25,14 @@ import time
 class DfHelpers:
 
     @staticmethod
-    def print_timestamped_text(self, text=""):
+    def print_timestamped_text(text=""):
         """Prints a timestamped string."""
 
         dto = datetime.now()
         print('[{}] '.format(dto) + text)
 
     @staticmethod
-    def sleep_handler(self, nr_of_secs=1):
+    def sleep_handler(nr_of_secs=1):
         """Sleeps for a number of seconds, while printing the remaining number of seconds, every 5th seconds."""
 
         print("Sleeping {} sec > ".format(nr_of_secs), end="", flush=True)
