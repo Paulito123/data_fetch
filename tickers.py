@@ -27,6 +27,7 @@ import os.path
 from contextlib import closing
 from tinydb import *
 from df_helpers import DfHelpers as h
+import dateutil.parser as dp
 
 
 class Tickers:
@@ -84,8 +85,11 @@ class Tickers:
                             res = ticker_table.search(qy.ticker == symbol)
                             if len(res) == 0:
                                 # Symbol does not exist, therefore insert it
-                                ticker_table.insert({'ticker': symbol, 'last_update_date': '2000-01-01T00:00:00.000000',
-                                                     'last_status': 'init'})
+                                ticker_table.insert({
+                                    'ticker': symbol,
+                                     'last_update_date': '2000-01-01T00:00:00.000000',
+                                     'last_update_date_epoch': dp.parse('2000-01-01T00:00:00.000000').timestamp(),
+                                     'last_status': 'init'})
                                 h.print_timestamped_text('Symbol [{}] added to database.'.format(symbol))
             return True
         except:
@@ -119,7 +123,8 @@ class Tickers:
 
                 # Upsert the new ticker info
                 ticker_table.upsert({'ticker': ticker_info['ticker'], 
-                                     'last_update_date': ticker_info['last_update_date'], 
+                                     'last_update_date': ticker_info['last_update_date'],
+                                     'last_update_date_epoch': dp.parse(ticker_info['last_update_date']).timestamp(),
                                      'last_status': ticker_info['last_status']}, qy.ticker == ticker_info['ticker'])
                 
                 h.print_timestamped_text('Symbol [{}] upserted.'.format(ticker_info['ticker']))
@@ -128,3 +133,33 @@ class Tickers:
         except:
             h.print_timestamped_text("Error: cannot open database.")
             return False
+
+    @staticmethod
+    def get_tickers_later_then(db_file, ticker_table_name, relevance_date_as_from):
+        ''' Update the ticker db with ticker info. Requires a dict with following elements: ticker, last_update_date, last_status'''
+
+        # Check if db exists.
+        if not os.path.isfile(db_file):
+            h.print_timestamped_text("database file [{}] does not exist.".format(db_file))
+            return {}
+
+        try:
+            rel_date_epoch = dp.parse(relevance_date_as_from).timestamp()
+        except:
+            print('Error: relevance_date_as_from not a valid date')
+            return
+
+        try:
+            # Open the database
+            with TinyDB(db_file) as db:
+                # Open the ticker table and create query object
+                ticker_table = db.table(ticker_table_name)
+                qy = Query()
+
+                # Get all tickers that have not been process in the time between relevance_date_as_from and now.
+                relevant_tickers_list = ticker_table.search(qy.last_update_date_epoch < rel_date_epoch)
+
+            return relevant_tickers_list
+        except:
+            h.print_timestamped_text("Error: cannot open database.")
+            return {}
