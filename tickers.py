@@ -122,7 +122,7 @@ class Tickers:
                 ticker_table.upsert({'ticker': ticker_info['ticker'], 
                                      'last_update_date': ticker_info['last_update_date'],
                                      'last_update_date_epoch': dp.parse(ticker_info['last_update_date']).timestamp(),
-                                     'last_status': ticker_info['last_status']}, qy.ticker == ticker_info['ticker'])
+                                     'last_status': ticker_info['last_status']}, qy['ticker'] == ticker_info['ticker'])
                 
                 h.print_timestamped_text('Symbol [{}] upserted.'.format(ticker_info['ticker']))
 
