@@ -17,7 +17,7 @@
 ###############################################################################
 from alpha_vantage.timeseries import TimeSeries
 from datetime import datetime, timedelta
-from config import config
+from config.configuration import Configuration as conf
 from df_helpers import DfHelpers
 from tinydb import TinyDB, Query
 from tickers import Tickers
@@ -33,7 +33,9 @@ class df_alpha_vantage:
 
     @staticmethod
     def fetch_timeseries(api_key, ticker_symbol, interval, file_path):
-        """Fetch data for 1 symbol and timeframe, and write it to a sheet in an existing or not yet existing excel file."""
+        """
+        Fetch data for 1 symbol and timeframe, and write it to a sheet in an existing or not yet existing excel file.
+        """
         timestr = time.strftime("%Y%m%d%H%M%S")
         fq_filename = file_path + '/' + ticker_symbol + '_' + interval + '_' + timestr
 
