@@ -25,7 +25,7 @@
 from tinydb import *
 
 db_file = 'config_db.json'
-db_name = 'config_db'
+db_name = 'data_sources'
 
 with TinyDB(db_file) as db:
     config_db = db.table(db_name)
@@ -41,3 +41,30 @@ with TinyDB(db_file) as db:
         'login': 'email2@gmail.com',
         'key': 'XXXXXXXXXX',
         'secret': 'XXXXXXXXXX'})
+
+db_name = 'globals_p'
+
+with TinyDB(db_file) as db:
+    config_db = db.table(db_name)
+    config_db.insert({
+        'conf_key': '',
+        'conf_value': ''})
+    config_db.insert({
+        'conf_key': '',
+        'conf_value': ''})
+    config_db.insert({
+        'conf_key': '',
+        'conf_value': ''})
+    config_db.insert({
+        'conf_key': '',
+        'conf_value': ''})
+    config_db.insert({
+        'conf_key': '',
+        'conf_value': ''})
+    config_db.insert({
+        'conf_key': '',
+        'conf_value': ''})
+    config_db.insert({
+        'conf_key': '',
+        'conf_value': ''})
+    

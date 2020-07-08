@@ -57,7 +57,7 @@ class Configuration:
     def get_ds_limits(data_source, db_file='config_db.json', db_name='limits_db'):
         """
         Get limits opposed for a specific data_source. Returns a dict like:
-        {'data_source'='XXXXX','day_limit'=0,'hour_limit'=0}
+        {'data_source'='XXXXX','day_limit'=0,'hour_limit'=0, 'minute_limit': 0}
         """
 
         # Open the database
@@ -67,18 +67,18 @@ class Configuration:
             res = config_table.search(qy.data_source == data_source)
 
             if len(res) == 0:
-                return {'data_source': data_source, 'day_limit': 0, 'hour_limit': 0}
+                return {'data_source': data_source, 'day_limit': 0, 'hour_limit': 0, 'minute_limit': 0}
             elif len(res) == 1:
                 return res
             else:
-                return {'data_source': data_source, 'day_limit': 0, 'hour_limit': 0}
+                return {'data_source': data_source, 'day_limit': 0, 'hour_limit': 0, 'minute_limit': 0}
 
 
     @staticmethod
     def set_ds_limits(data_source_dict, db_file='config_db.json', db_name='limits_db'):
         """
         Set limits opposed for a specific data_source. Takes a dict data_source_dict like:
-        {'data_source'='XXXXX','day_limit'=0,'hour_limit'=0}
+        {'data_source'='XXXXX','day_limit'=0,'hour_limit'=0, 'minute_limit': 0}
         """
 
         # Open the database
@@ -90,7 +90,8 @@ class Configuration:
             # Insert the new ticker info
             stats_table_obj.upsert({'data_source': data_source_dict['data_source'],
                                     'day_limit': data_source_dict['day_limit'],
-                                    'hour_limit': data_source_dict['hour_limit']},
+                                    'hour_limit': data_source_dict['hour_limit'],
+                                    'minute_limit': data_source_dict['minute_limit']},
                                    qy['data_source'] == data_source_dict['data_source'])
 
         h.print_timestamped_text('Limits updated for [{}].'.format(data_source_dict['data_source']))

@@ -37,7 +37,7 @@ class DownloadStats:
     @staticmethod
     def append_dl_stats(stats_db, stats_table, conn_info):
         """
-        Add a statistic to the specified stats database. data_box should be like
+        Add a statistic to the specified stats database. conn_info should be like
         {'data_source'='','conn_name'='','start_datetime'='','calls'=0}
         """
 
@@ -58,70 +58,66 @@ class DownloadStats:
 
 
     @staticmethod
-    def fetch_dl_stats_for_connection(stats_db, stats_table, data_source, conn_name):
-        """Returns counter information of previous download sessions"""
-        # Create output container
-        output_dict = {}
+    def get_calls_left_for_connection(stats_db, stats_table, data_source, conn_name):
+        """
+        Returns numer of calls left for a connection. Output format is:
+        {'data_source'='','conn_name'='', 'day_calls_left': 0, 'hour_calls_left': 0, 'minute_calls_left': 0}
+        """
 
-        # Fetch the limits for the given data_source, to use in the query for getting the download stats.
+        # Fetch the limits for the given data_source, to use in the query for getting the download stats. 
+        # {'data_source'='XXXXX','day_limit'=0,'hour_limit'=0, 'minute_limit': 0}
         limits = conf.get_ds_limits(data_source)
 
         # Calculate epoch times for day and hour limits
         ts_day = (datetime.now() - timedelta(hours=24, minutes=1)).timestamp()
-        ts_hour = (datetime.now() - timedelta(minutes=1)).timestamp()
+        ts_hour = (datetime.now() - timedelta(hours=1, minutes=1)).timestamp()
+        ts_min = (datetime.now() - timedelta(minutes=1)).timestamp()
 
         # Open the database
         with TinyDB(stats_db) as db:
             # Open the ticker table and create query object
             stats_table_obj = db.table(stats_table)
             qy = Query()
-            res = stats_table_obj.search(Query()['data_source'] == data_source &
+            res = stats_table_obj.search(qy['data_source'] == data_source &
                                          qy['conn_name'] == conn_name &
-                                         qy['start_datetime_epoch'] < ts_day)
+                                         qy['start_datetime_epoch'] > ts_day)
 
             if len(res) == 0:
-                return {'data_source': data_source, 'conn_name': conn_name, 'calls': 0}
-            elif len(res) == 1:
-                calls_made = 0
-                return {'data_source': data_source, 'conn_name': conn_name, 'calls': calls_made}
+                return {'data_source': data_source, 'conn_name': conn_name, 'day_calls_left': 0, 'hour_calls_left': 0, 'minute_calls_left': 0}
             else:
+                calls_made_day=0
+                calls_made_hour=0
+                calls_made_minute=0
 
+                for entry in res:
+                    # Count call for last day
+                    if limits['day_limit'] > 0:
+                        calls_made_day += entry['calls']
 
+                    # Count calls for last hour
+                    if limits['hour_limit'] > 0:
+                        if entry['start_datetime_epoch'] > ts_hour:
+                            calls_made_hour += entry['calls']
 
+                    # Count calls for last minute
+                    if limits['minute_limit'] > 0:
+                        if entry['start_datetime_epoch'] > ts_min:
+                            calls_made_minute += entry['calls']
 
+                calls_left_day = -1
+                calls_left_hour = -1
+                calls_left_minute = -1
 
+                if limits['day_limit'] > 0:
+                    calls_left_day = limits['day_limit'] - calls_made_day
 
-        try:
-            header_skipped = 0
-            threshold_dt = datetime.now() - timedelta(hours=hours_back, minutes=1)
-            with open(stats_file, 'r') as fl:
-                lines = fl.readlines()
-                for line in lines:
-                    # Skip first line and last empty line
-                    if header_skipped == 0 or len(line.strip()) == 0:
-                        header_skipped = 1
-                        continue
-                    cols = line.split(',')
-                    # evaluate the new datetime and sum the calls
-                    t_index = int(cols[0].rstrip())
-                    t_new = dp.parse(cols[1])
-                    nr_new = int(cols[2].rstrip())
+                if limits['hour_limit'] > 0:
+                    calls_left_hour = limits['hour_limit'] - calls_made_hour
 
-                    if threshold_dt < t_new:
-                        if t_index in output_dict:
-                            t_old = dp.parse(output_dict[t_index][0])
-                            last_date = t_old if t_old < t_new else t_new
-                            sum_calls = output_dict[t_index][1] + nr_new
-                            output_dict[t_index] = [last_date.isoformat(), sum_calls]
-                        else:
-                            output_dict[t_index] = [cols[1], nr_new]
-            print('---dl_stats dictionary created---')
-        except:
-            print('Error: no dl_stats dictionary could be made...')
-            output_dict = {}
+                if limits['minute_limit'] > 0:
+                    calls_left_minute = limits['minute_limit'] - calls_made_minute
 
-        if len(output_dict) == 0:
-            for i in range(0, len(config.api_key_list_single)):
-                output_dict[i] = ['2000-01-01T00:00:00.000000', 0]
-
-        return output_dict
+                return {'data_source': data_source, 'conn_name': conn_name, 
+                        'day_calls_left': calls_left_day, 
+                        'hour_calls_left': calls_left_hour, 
+                        'minute_calls_left': calls_left_minute}
