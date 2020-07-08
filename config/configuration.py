@@ -17,6 +17,8 @@
 # You might have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+# todo: Create a general configuration with all the path, db names etc for T/P.
+#
 ###############################################################################
 from df_helpers import DfHelpers as h
 from tinydb import TinyDB, Query

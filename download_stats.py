@@ -17,12 +17,13 @@
 # You might have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+# todo: check https://finnhub.io/docs/api#stock-candles
+#
 ###############################################################################
-from alpha_vantage.timeseries import TimeSeries
 from datetime import datetime, timedelta
-from df_helpers import DfHelpers
+from df_helpers import DfHelpers as h
 from tinydb import TinyDB, Query
-from tickers import Tickers
+from config.configuration import Configuration as conf
 
 import dateutil.parser as dp
 import urllib.request as request
@@ -32,27 +33,64 @@ import time
 
 class DownloadStats:
 
-    #todo:
-    # - Method that adds latest dl stats
-    # - Method that returns calls left for a key
+
+    @staticmethod
+    def append_dl_stats(stats_db, stats_table, conn_info):
+        """
+        Add a statistic to the specified stats database. data_box should be like
+        {'data_source'='','conn_name'='','start_datetime'='','calls'=0}
+        """
+
+        # Open the database
+        with TinyDB(stats_db) as db:
+            # Open the ticker table and create query object
+            stats_table_obj = db.table(stats_table)
+            qy = Query()
+
+            # Insert the new ticker info
+            stats_table_obj.insert({'data_source': conn_info['data_source'],
+                                    'conn_name': conn_info['conn_name'],
+                                    'start_datetime': conn_info['start_datetime'],
+                                    'start_datetime_epoch': dp.parse(conn_info['start_datetime']).timestamp(),
+                                    'calls': conn_info['calls']})
+
+            h.print_timestamped_text('Stats for [{}] inserted.'.format(conn_info['conn_name']))
 
 
     @staticmethod
-    def append_dl_stats(stats_file_path, api_key_index, date, nr_of_calls):
-        """Append a line to dl_stats file"""
-        try:
-            with open(stats_file_path, 'a') as fd:
-                fd.write('{},{},{}'.format(api_key_index, date, nr_of_calls))
-            print("---Stats written to stats file---")
-            return True
-        except:
-            print("Error: cannot write to stats file.")
-            return False
-
-    @staticmethod
-    def fetch_dl_stats(stats_file, hours_back):
+    def fetch_dl_stats_for_connection(stats_db, stats_table, data_source, conn_name):
         """Returns counter information of previous download sessions"""
+        # Create output container
         output_dict = {}
+
+        # Fetch the limits for the given data_source, to use in the query for getting the download stats.
+        limits = conf.get_ds_limits(data_source)
+
+        # Calculate epoch times for day and hour limits
+        ts_day = (datetime.now() - timedelta(hours=24, minutes=1)).timestamp()
+        ts_hour = (datetime.now() - timedelta(minutes=1)).timestamp()
+
+        # Open the database
+        with TinyDB(stats_db) as db:
+            # Open the ticker table and create query object
+            stats_table_obj = db.table(stats_table)
+            qy = Query()
+            res = stats_table_obj.search(Query()['data_source'] == data_source &
+                                         qy['conn_name'] == conn_name &
+                                         qy['start_datetime_epoch'] < ts_day)
+
+            if len(res) == 0:
+                return {'data_source': data_source, 'conn_name': conn_name, 'calls': 0}
+            elif len(res) == 1:
+                calls_made = 0
+                return {'data_source': data_source, 'conn_name': conn_name, 'calls': calls_made}
+            else:
+
+
+
+
+
+
         try:
             header_skipped = 0
             threshold_dt = datetime.now() - timedelta(hours=hours_back, minutes=1)
