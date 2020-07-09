@@ -26,7 +26,7 @@ import urllib.request as request
 import os.path
 from contextlib import closing
 from tinydb import *
-from df_helpers import DfHelpers as h
+from data_fetch.df_helpers import DfHelpers as h
 import dateutil.parser as dp
 
 
@@ -35,6 +35,8 @@ class Tickers:
     @staticmethod
     def fetch_nq_ticker_file(ftp_path, nasdaq_file):
         """check if nasdaq file exists, if not, fetch it"""
+
+        print("Trying to fetch nasdaq file from {} into {}.".format(ftp_path, nasdaq_file))
 
         try:
             if not os.path.isfile(nasdaq_file):

@@ -16,16 +16,8 @@
 #
 ###############################################################################
 from alpha_vantage.timeseries import TimeSeries
-from datetime import datetime, timedelta
-from config.configuration import Configuration as conf
-from df_helpers import DfHelpers
-from tinydb import TinyDB, Query
-from tickers import Tickers
+from data_fetch.df_helpers import DfHelpers
 
-import dateutil.parser as dp
-import urllib.request as request
-import os.path
-import shutil
 import time
 
 

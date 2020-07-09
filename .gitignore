@@ -1,8 +1,9 @@
-config.py
-venv
-test*
+/venv
+/database/*.json
 /config/*.json
-/config/private*
+test*
+private*
+/datafiles/*.xlsx
 /config/__pycache__/config.cpython-36.pyc
 /__pycache__/tickers.cpython-36.pyc
 /__pycache__/df_helpers.cpython-36.pyc

@@ -20,12 +20,27 @@
 # todo: Create a general configuration with all the path, db names etc for T/P.
 #
 ###############################################################################
-from df_helpers import DfHelpers as h
+from data_fetch.df_helpers import DfHelpers as h
 from tinydb import TinyDB, Query
 import os.path
 
 
 class Configuration:
+
+    def __init__(self, db_file, db_name):
+        self.db_file = db_file
+        self.db_name = db_name
+
+
+    def get_main_config(self):
+        """Return a dict with key-value pairs for the main configuration."""
+        with TinyDB(self.db_file) as cdb:
+            ctable = cdb.table(self.db_name)
+            out = {}
+            for id in ctable:
+                out[id['context']] = id['value']
+        return out
+
 
     @staticmethod
     def get_keys_for_data_source(data_source, db_file='config_db.json', db_name='config_db'):

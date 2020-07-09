@@ -19,7 +19,6 @@
 #
 ###############################################################################
 
-__author__ = """Paul Geudens"""
-__version__ = '0.0.1'
 
-from .config.configuration import Configuration
+class DataFetchInvalidAnusException(Exception):
+    """Raised when an invalid anus is passed to the anal loader."""

@@ -18,21 +18,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ###############################################################################
-from alpha_vantage.timeseries import TimeSeries
 from datetime import datetime, timedelta
-from df_helpers import DfHelpers
-from tickers import Tickers
+from data_fetch.df_helpers import DfHelpers
+from data_fetch.tickers import Tickers
 
 import dateutil.parser as dp
-import urllib.request as request
 import os.path
-import shutil
-import time
-
-
-
-
-
 
 
 def auto_load_nasdaq_hist(stats_file_base, exchange, path_out, index_file, backup_file_template, max_calls_per_min,
@@ -132,16 +123,16 @@ def main():
 
     # Variables
     ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-    index_file = ROOT_DIR + '/index_files/nasdaq_dl_hist.txt'
-    nasdaq_file = ROOT_DIR + '/data_files/nasdaqlisted.txt'
-    raw_data_directory = '/home/raw_data'
+    #index_file = ROOT_DIR + '/index_files/nasdaq_dl_hist.txt'
+    #nasdaq_file = ROOT_DIR + '/datafiles/nasdaqlisted.txt'
+    #raw_data_directory = '/home/raw_data'
     genesis_date = '2000-01-01T00:00:00.000000'
     interval = '1min'
-    max_calls_per_day = 500
-    max_calls_per_min = 5
+    #max_calls_per_day = 500
+    #max_calls_per_min = 5
     exchange = "alpha_vantage"
-    stats_file_base = ROOT_DIR + '/config/dl_stats_'
-    backup_file_template = ROOT_DIR + '/index_files/backup/nasdaq_dl_hist'
+    #stats_file_base = ROOT_DIR + '/config/dl_stats_'
+    #backup_file_template = ROOT_DIR + '/index_files/backup/nasdaq_dl_hist'
 
     # Test if the index file exists...
     if not os.path.isfile(index_file):

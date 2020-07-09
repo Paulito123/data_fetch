@@ -72,7 +72,7 @@ import time
 #                fetch_timeseries_alpha_vantage(filename, api_key, ticker, interval)
 
 ## variables that will be used as input for execution.
-#filepath = 'data_files/'
+#filepath = 'datafiles/'
 #api_key = config.api_key_alpha_vantage
 #max_calls_per_min = 5
 ##object_list = [['AEX.xlsx', '^AEX', ['30min', '60min']],

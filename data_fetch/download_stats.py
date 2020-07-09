@@ -21,15 +21,12 @@
 #
 ###############################################################################
 from datetime import datetime, timedelta
-from df_helpers import DfHelpers as h
+from data_fetch.df_helpers import DfHelpers as h
 from tinydb import TinyDB, Query
 from config.configuration import Configuration as conf
 
 import dateutil.parser as dp
-import urllib.request as request
-import os.path
-import shutil
-import time
+
 
 class DownloadStats:
 
@@ -60,7 +57,7 @@ class DownloadStats:
     @staticmethod
     def get_calls_left_for_connection(stats_db, stats_table, data_source, conn_name):
         """
-        Returns numer of calls left for a connection. Output format is:
+        Returns number of calls left for a connection. Output format is:
         {'data_source'='','conn_name'='', 'day_calls_left': 0, 'hour_calls_left': 0, 'minute_calls_left': 0}
         """
 
