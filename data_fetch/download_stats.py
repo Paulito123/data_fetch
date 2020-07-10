@@ -21,7 +21,7 @@
 #
 ###############################################################################
 from datetime import datetime, timedelta
-from data_fetch.df_helpers import DfHelpers as h
+from data_fetch.helpers import Helpers as h
 from tinydb import TinyDB, Query
 from config.configuration import Configuration as conf
 
@@ -29,7 +29,6 @@ import dateutil.parser as dp
 
 
 class DownloadStats:
-
 
     @staticmethod
     def append_dl_stats(stats_db, stats_table, conn_info):

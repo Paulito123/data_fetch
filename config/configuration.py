@@ -17,10 +17,8 @@
 # You might have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# todo: Create a general configuration with all the path, db names etc for T/P.
-#
 ###############################################################################
-from data_fetch.df_helpers import DfHelpers as h
+from data_fetch.helpers import Helpers as h
 from tinydb import TinyDB, Query
 import os.path
 
@@ -28,37 +26,39 @@ import os.path
 class Configuration:
 
     def __init__(self, db_file, db_name):
-        self.db_file = db_file
-        self.db_name = db_name
+        self._db_file = db_file
+        self._db_name = db_name
+        self.main_config = self.load_main_config()
 
-
-    def get_main_config(self):
+    def load_main_config(self):
         """Return a dict with key-value pairs for the main configuration."""
-        with TinyDB(self.db_file) as cdb:
-            ctable = cdb.table(self.db_name)
+        with TinyDB(self._db_file) as cdb:
+            ctable = cdb.table(self._db_name)
             out = {}
-            for id in ctable:
-                out[id['context']] = id['value']
+            for c in ctable:
+                out[c['context']] = c['value']
         return out
 
-
-    @staticmethod
-    def get_keys_for_data_source(data_source, db_file='config_db.json', db_name='config_db'):
+    def get_keys_for_data_source(self, data_source):
         """Get a list of keys for a given data source from the configuration database."""
 
         # List to be filled and returned
         out = []
 
         # Check if ticker file exists.
-        if not os.path.isfile(db_file):
-            h.print_timestamped_text("Error: database file [{}] does not exist.".format(db_file))
+        if not os.path.isfile(self.main_config['path_data_sources_db']):
+            h.print_timestamped_text(
+                "Error: database file [{}] does not exist.".format(
+                    self.main_config['path_data_sources_db']
+                )
+            )
             return out
 
         # Query the DB for the requested keys
-        with TinyDB(db_file) as db:
-            config_table = db.table(db_name)
+        with TinyDB(self.main_config['path_data_sources_db']) as db:
+            config_table = db.table(self.main_config['tabnm_data_sources'])
             qy = Query()
-            res = config_table.search(qy.data_source == data_source)
+            res = config_table.search(qy["data_source"] == data_source)
 
         if len(res) > 0:
             for c in res:
@@ -67,39 +67,37 @@ class Configuration:
 
         return out
 
-
-    @staticmethod
-    def get_ds_limits(data_source, db_file='config_db.json', db_name='limits_db'):
+    def get_ds_limits(self, data_source):
         """
-        Get limits opposed for a specific data_source. Returns a dict like:
+        Get limits for a specific data_source. Returns a dict like:
         {'data_source'='XXXXX','day_limit'=0,'hour_limit'=0, 'minute_limit': 0}
         """
 
         # Open the database
-        with TinyDB(db_file) as db:
-            config_table = db.table(db_name)
+        with TinyDB(self.main_config['path_ds_limits_db']) as db:
+            config_table = db.table(self.main_config['tabnm_ds_limits'])
             qy = Query()
             res = config_table.search(qy.data_source == data_source)
 
             if len(res) == 0:
                 return {'data_source': data_source, 'day_limit': 0, 'hour_limit': 0, 'minute_limit': 0}
             elif len(res) == 1:
-                return res
+                return res[0]
             else:
                 return {'data_source': data_source, 'day_limit': 0, 'hour_limit': 0, 'minute_limit': 0}
 
 
     @staticmethod
-    def set_ds_limits(data_source_dict, db_file='config_db.json', db_name='limits_db'):
+    def set_ds_limits(self, data_source_dict):
         """
         Set limits opposed for a specific data_source. Takes a dict data_source_dict like:
         {'data_source'='XXXXX','day_limit'=0,'hour_limit'=0, 'minute_limit': 0}
         """
 
         # Open the database
-        with TinyDB(db_file) as db:
+        with TinyDB(self.main_config['path_ds_limits_db']) as db:
             # Open the ticker table and create query object
-            stats_table_obj = db.table(db_name)
+            stats_table_obj = db.table(self.main_config['tabnm_ds_limits'])
             qy = Query()
 
             # Insert the new ticker info

@@ -19,25 +19,17 @@
 #
 ###############################################################################
 from datetime import datetime, timedelta
-import time
+from data_fetch.helpers import Helpers as h
+from tinydb import TinyDB, Query
+from config.configuration import Configuration as conf
+import dateutil.parser as dp
 
 
-class DfHelpers:
+class Extractor:
 
-    @staticmethod
-    def print_timestamped_text(text=""):
-        """Prints a timestamped string."""
+    def __index__(self, data_path):
+        self.data_path = data_path
 
-        dto = datetime.now()
-        print('[{}] '.format(dto) + text)
-
-    @staticmethod
-    def sleep_handler(nr_of_secs=1):
-        """Sleeps for a number of seconds, while printing the remaining number of seconds, every 5th seconds."""
-
-        print("Sleeping {} sec > ".format(nr_of_secs), end="", flush=True)
-        for x in range(nr_of_secs, 0, -1):
-            time.sleep(1)
-            if x % 5 == 0:
-                print(".{}".format(x), end="", flush=True)
-        print('Wake up!')
+    @classmethod
+    def load_data_for_ds():
+        pass

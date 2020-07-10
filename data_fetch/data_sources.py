@@ -16,7 +16,7 @@
 #
 ###############################################################################
 from alpha_vantage.timeseries import TimeSeries
-from data_fetch.df_helpers import DfHelpers
+from data_fetch.helpers import Helpers
 
 import time
 
@@ -37,9 +37,9 @@ class df_alpha_vantage:
         # try to fetch data and write to excel
         try:
             data, meta_data = ts.get_intraday(symbol=ticker_symbol, interval=interval, outputsize='full')
-            DfHelpers.print_timestamped_text('Finished [' + ticker_symbol + ':' + interval + '] successfully.')
+            Helpers.print_timestamped_text('Finished [' + ticker_symbol + ':' + interval + '] successfully.')
             data.to_csv(fq_filename)
             return True
         except:
-            DfHelpers.print_timestamped_text('Issue with interval [' + interval + '] for [' + ticker_symbol + ']!!!')
+            Helpers.print_timestamped_text('Issue with interval [' + interval + '] for [' + ticker_symbol + ']!!!')
             return False
