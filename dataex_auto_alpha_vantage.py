@@ -19,7 +19,7 @@
 #
 ###############################################################################
 from datetime import datetime, timedelta
-from data_fetch.df_helpers import DfHelpers
+from data_fetch.helpers import Helpers
 from data_fetch.tickers import Tickers
 
 import dateutil.parser as dp
@@ -91,7 +91,7 @@ def auto_load_nasdaq_hist(stats_file_base, exchange, path_out, index_file, backu
                                             break
                                     else:
                                         calls_left_minute = max_calls_per_min
-                                        DfHelpers.sleep_handler(65)
+                                        Helpers.sleep_handler(65)
                                 else:
                                     # No more calls left for api key index
                                     symbol_dict_out[symbol] = symbol_dict[symbol]

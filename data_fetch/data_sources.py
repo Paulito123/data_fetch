@@ -16,30 +16,41 @@
 #
 ###############################################################################
 from alpha_vantage.timeseries import TimeSeries
-from data_fetch.helpers import Helpers
-
+from data_fetch.helpers import Helpers as h
+from tinydb import TinyDB, Query
+import os.path
 import time
 
 
-class df_alpha_vantage:
+class DataSource:
+    def __init__(self, root_dir, config):
+        self._config = config
+        self.root_dir = root_dir
 
-    @staticmethod
-    def fetch_timeseries(api_key, ticker_symbol, interval, file_path):
-        """
-        Fetch data for 1 symbol and timeframe, and write it to a sheet in an existing or not yet existing excel file.
-        """
-        timestr = time.strftime("%Y%m%d%H%M%S")
-        fq_filename = file_path + '/' + ticker_symbol + '_' + interval + '_' + timestr
+    def get_active_data_source(self):
+        """Get a list of keys for a given data source from the configuration database."""
 
-        # define exchange bridge
-        ts = TimeSeries(key=api_key, output_format='pandas')
+        # local variables
+        out = []
+        path_db = self._root_dir + '/' + self._config['path_db']
 
-        # try to fetch data and write to excel
-        try:
-            data, meta_data = ts.get_intraday(symbol=ticker_symbol, interval=interval, outputsize='full')
-            Helpers.print_timestamped_text('Finished [' + ticker_symbol + ':' + interval + '] successfully.')
-            data.to_csv(fq_filename)
-            return True
-        except:
-            Helpers.print_timestamped_text('Issue with interval [' + interval + '] for [' + ticker_symbol + ']!!!')
-            return False
+        # Check if ticker file exists.
+        if not os.path.isfile(path_db):
+            h.print_timestamped_text(
+                "Error: database file [{}] does not exist.".format(
+                    self._config['path_db']
+                )
+            )
+            return out
+
+        # Query the DB for the requested keys
+        with TinyDB(path_db) as db:
+            config_table = db.table(self._config['table_name'])
+            res = config_table.search(Query()["enabled"] == 1)
+
+        if len(res) > 0:
+            for c in res:
+                if c is not None:
+                    out.append(c)
+
+        return out

@@ -1,6 +1,6 @@
 /venv
 /database/*.json
-/config/*.json
+/config/*.conf
 test*
 private*
 /datafiles/*.xlsx

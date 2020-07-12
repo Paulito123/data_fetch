@@ -30,17 +30,21 @@ from data_fetch.helpers import Helpers as h
 import dateutil.parser as dp
 
 
-class Tickers:
+class Ticker:
 
-    @staticmethod
-    def fetch_nq_ticker_file(ftp_path, nasdaq_file):
+    def __init__(self, root_dir, config):
+        self._config = config
+        self.root_dir = root_dir
+
+    def fetch_nq_ticker_file(self):
         """check if nasdaq file exists, if not, fetch it"""
 
-        print("Trying to fetch nasdaq file from {} into {}.".format(ftp_path, nasdaq_file))
+        # Local variables
+        nasdaq_file = self.root_dir + '/' + self._config['path_file']
 
         try:
             if not os.path.isfile(nasdaq_file):
-                with closing(request.urlopen(ftp_path)) as r:
+                with closing(request.urlopen(self._config['path_ftp'])) as r:
                     with open(nasdaq_file, 'wb') as f:
                         shutil.copyfileobj(r, f)
 
@@ -51,9 +55,14 @@ class Tickers:
             print('Error: nasdaq file not fetched!')
             return False
 
-    @staticmethod
-    def nasdaq_ticker_file_to_db_sync(ticker_file, db_file, ticker_db_name):
+    def nasdaq_ticker_file_to_db_sync(self):
         ''' Update the ticker database with the latest tickers '''
+
+        #Local variables
+        ticker_file = self.root_dir + '/' + self._config['path_file']
+        db_file = self.root_dir + '/' + self._config['path_db']
+        ticker_db_name = self._config['table_name']
+
         # Check if ticker file exists.
         if not os.path.isfile(ticker_file):
             h.print_timestamped_text("ticker file [{}] does not exist.".format(ticker_file))
@@ -95,17 +104,22 @@ class Tickers:
             h.print_timestamped_text("Error: cannot open or create database.")
             return False
 
+    def update_ticker_status(self, ticker_info):
+        '''
+        Update the ticker db with ticker info. Requires a dict with following elements:
+        ticker, last_update_date, last_status
+        '''
 
-    @staticmethod
-    def update_ticker_status(db_file, ticker_table_name, ticker_info):
-        ''' Update the ticker db with ticker info. Requires a dict with following elements: ticker, last_update_date, last_status'''
+        # Local variables
+        ticker_db_name = self._config['table_name']
+        db_file = self.root_dir + '/' + self._config['path_db']
 
         # Check if db exists.
         if not os.path.isfile(db_file):
             h.print_timestamped_text("database file [{}] does not exist.".format(db_file))
             return False
 
-		# Check if ticker info is well formatted.
+        # Check if ticker info is well formatted.
         if 'ticker' not in ticker_info:
             print('Error: missing element [ticker] in ticker_info.')
         elif 'last_update_date' not in ticker_info:
@@ -117,14 +131,14 @@ class Tickers:
             # Open the database
             with TinyDB(db_file) as db:
                 # Open the ticker table and create query object
-                ticker_table = db.table(ticker_table_name)
-                qy = Query()
+                ticker_table = db.table(ticker_db_name)
 
                 # Upsert the new ticker info
                 ticker_table.upsert({'ticker': ticker_info['ticker'], 
                                      'last_update_date': ticker_info['last_update_date'],
                                      'last_update_date_epoch': dp.parse(ticker_info['last_update_date']).timestamp(),
-                                     'last_status': ticker_info['last_status']}, qy['ticker'] == ticker_info['ticker'])
+                                     'last_status': ticker_info['last_status']},
+                                    Query()['ticker'] == ticker_info['ticker'])
                 
                 h.print_timestamped_text('Symbol [{}] upserted.'.format(ticker_info['ticker']))
 
@@ -133,9 +147,15 @@ class Tickers:
             h.print_timestamped_text("Error: cannot open database.")
             return False
 
-    @staticmethod
-    def get_tickers_later_then(db_file, ticker_table_name, relevance_date_as_from):
-        ''' Update the ticker db with ticker info. Requires a dict with following elements: ticker, last_update_date, last_status'''
+    def get_tickers_later_then(self, relevance_date_as_from):
+        '''
+        Update the ticker db with ticker info. Requires a dict with following elements:
+        ticker, last_update_date, last_status
+        '''
+
+        # Local variables
+        ticker_db_name = self._config['table_name']
+        db_file = self.root_dir + '/' + self._config['path_db']
 
         # Check if db exists.
         if not os.path.isfile(db_file):
@@ -152,7 +172,7 @@ class Tickers:
             # Open the database
             with TinyDB(db_file) as db:
                 # Open the ticker table and create query object
-                ticker_table = db.table(ticker_table_name)
+                ticker_table = db.table(ticker_db_name)
                 qy = Query()
 
                 # Get all tickers that have not been process in the time between relevance_date_as_from and now.

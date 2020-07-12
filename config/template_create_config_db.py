@@ -20,6 +20,7 @@
 ###############################################################################
 
 from tinydb import *
+import configparser
 
 db_file = '../database/config_db.json'
 db_name = 'data_sources'
@@ -47,90 +48,24 @@ with TinyDB(db_file) as db:
         'data_source': 'alpha_vantage',
         'day_limit': 500,
         'hour_limit': 0,
-        'minute_limit': 5}, Query()['data_source'] == 'alpha_vantage')
+        'minute_limit': 5},
+        Query()['data_source'] == 'alpha_vantage')
 
-db_name = 'main_prod'
-
-with TinyDB(db_file) as db:
-    config_db = db.table(db_name)
-
-    context = 'path_dl_stats_db'
-    config_db.upsert({
-        'context': context,
-        'description': 'The fq file name of the download statistics database.',
-        'type': 'string',
-        'value': '/database/dl_stats_db.json'},
-        Query()['context'] == context)
-    context = 'tabnm_dl_stats'
-    config_db.upsert({
-        'context': context,
-        'description': 'The name of the download statistics table.',
-        'type': 'string',
-        'value': 'dl_stats'},
-        Query()['context'] == context)
-
-    context = 'path_data_sources_db'
-    config_db.upsert({
-        'context': context,
-        'description': 'The fq file name of the data sources database.',
-        'type': 'string',
-        'value': '/database/data_sources_db.json'},
-        Query()['context'] == context)
-    context = 'tabnm_data_sources'
-    config_db.upsert({
-        'context': context,
-        'description': 'The name of the data sources table.',
-        'type': 'string',
-        'value': 'data_sources'},
-        Query()['context'] == context)
-
-    context = 'path_dl_limits_db'
-    config_db.upsert({
-        'context': context,
-        'description': 'The fq file name of the download limits database.',
-        'type': 'string',
-        'value': '/database/data_sources_db.json'},
-        Query()['context'] == context)
-    context ='tabnm_download_limits'
-    config_db.upsert({
-        'context': context,
-        'description': 'The name of the download limits table.',
-        'type': 'string',
-        'value': 'limits'},
-        Query()['context'] == context)
-
-    context ='path_ticker_db'
-    config_db.upsert({
-        'context': context,
-        'description': 'The fq file name of the ticker database.',
-        'type': 'string',
-        'value': '/database/tickers_db.json'}, Query()['context'] == context)
-    context ='tabnm_tickers'
-    config_db.upsert({
-        'context': context,
-        'description': 'The name of the tickers table.',
-        'type': 'string',
-        'value': 'tickers'},
-        Query()['context'] == context)
-
-    context ='path_nasdaq_ticker_ftp'
-    config_db.upsert({
-        'context': context,
-        'description': 'The fq ftp path to the main nasdaq ticker file.',
-        'type': 'string',
-        'value': 'ftp://ftp.nasdaqtrader.com/SymbolDirectory/nasdaqlisted.txt'},
-        Query()['context'] == context)
-    context ='path_local_nasdaq_ticker_file'
-    config_db.upsert({
-        'context': context,
-        'description': 'The fq path to the local nasdaq ticker file.',
-        'type': 'string',
-        'value': '/datafiles/nasdaqlisted.txt'},
-        Query()['context'] == context)
-
-    context = 'genesis_date'
-    config_db.upsert({
-        'context': context,
-        'description': 'A date used for initializations.',
-        'type': 'datetime',
-        'value': '2000-01-01T00:00:00.000000'}, Query()['context'] == context)
+main_config_file = '../config/data_fetch.conf'
+config = configparser.ConfigParser()
+config['download_stats'] = {'path_db': 'database/dl_stats_db.json',
+                            'table_name': 'dl_stats'}
+config['data_source'] = {'path_db': 'database/data_sources_db.json',
+                         'table_name': 'data_sources'}
+config['ds_limits'] = {'path_db': 'database/data_sources_db.json',
+                       'table_name': 'limits'}
+config['tickers'] = {'path_db': 'database/tickers_db.json',
+                     'table_name': 'tickers',
+                     'path_ftp': 'ftp://ftp.nasdaqtrader.com/SymbolDirectory/nasdaqlisted.txt',
+                     'path_file': 'datafiles/nasdaqlisted.txt'}
+config['application'] = {'genesis_date': '2000-01-01T00:00:00.000000',
+                         'days_before_refresh': '30',
+                         'interval': '1min',
+                         'data_output_path': 'datafiles'}
+with open(main_config_file, 'w') as configfile:
+   config.write(configfile)

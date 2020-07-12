@@ -23,25 +23,28 @@
 from datetime import datetime, timedelta
 from data_fetch.helpers import Helpers as h
 from tinydb import TinyDB, Query
-from config.configuration import Configuration as conf
-
 import dateutil.parser as dp
 
 
 class DownloadStats:
 
-    @staticmethod
-    def append_dl_stats(stats_db, stats_table, conn_info):
+    def __init__(self, root_dir, config):
+        self._config = config
+        self.root_dir = root_dir
+
+    def append_dl_stats(self, conn_info):
         """
         Add a statistic to the specified stats database. conn_info should be like
         {'data_source'='','conn_name'='','start_datetime'='','calls'=0}
         """
+        # Local variables
+        stats_db = self._config['path_db']
+        stats_table = self._config['table_name']
 
         # Open the database
         with TinyDB(stats_db) as db:
             # Open the ticker table and create query object
             stats_table_obj = db.table(stats_table)
-            qy = Query()
 
             # Insert the new ticker info
             stats_table_obj.insert({'data_source': conn_info['data_source'],
@@ -53,16 +56,14 @@ class DownloadStats:
             h.print_timestamped_text('Stats for [{}] inserted.'.format(conn_info['conn_name']))
 
 
-    @staticmethod
-    def get_calls_left_for_connection(stats_db, stats_table, data_source, conn_name):
+    def get_calls_left_for_connection(self, data_source, conn_name, limits):
         """
         Returns number of calls left for a connection. Output format is:
         {'data_source'='','conn_name'='', 'day_calls_left': 0, 'hour_calls_left': 0, 'minute_calls_left': 0}
         """
-
-        # Fetch the limits for the given data_source, to use in the query for getting the download stats. 
-        # {'data_source'='XXXXX','day_limit'=0,'hour_limit'=0, 'minute_limit': 0}
-        limits = conf.get_ds_limits(data_source)
+        # Local variables
+        stats_db = self._config['path_db']
+        stats_table = self._config['table_name']
 
         # Calculate epoch times for day and hour limits
         ts_day = (datetime.now() - timedelta(hours=24, minutes=1)).timestamp()
@@ -74,12 +75,15 @@ class DownloadStats:
             # Open the ticker table and create query object
             stats_table_obj = db.table(stats_table)
             qy = Query()
-            res = stats_table_obj.search(qy['data_source'] == data_source &
-                                         qy['conn_name'] == conn_name &
-                                         qy['start_datetime_epoch'] > ts_day)
+            res = stats_table_obj.search((qy['data_source'] == data_source) &
+                                         (qy['conn_name'] == conn_name) &
+                                         (qy['start_datetime_epoch'] > ts_day))
 
             if len(res) == 0:
-                return {'data_source': data_source, 'conn_name': conn_name, 'day_calls_left': 0, 'hour_calls_left': 0, 'minute_calls_left': 0}
+                return {'data_source': data_source, 'conn_name': conn_name,
+                        'day_calls_left': limits['day_limit'],
+                        'hour_calls_left': limits['hour_limit'],
+                        'minute_calls_left': limits['minute_limit']}
             else:
                 calls_made_day=0
                 calls_made_hour=0

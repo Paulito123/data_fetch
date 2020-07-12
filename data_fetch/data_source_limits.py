@@ -20,84 +20,46 @@
 ###############################################################################
 from data_fetch.helpers import Helpers as h
 from tinydb import TinyDB, Query
-import os.path
 
 
-class Configuration:
+class DSLimits:
 
-    def __init__(self, db_file, db_name):
-        self._db_file = db_file
-        self._db_name = db_name
-        self.main_config = self.load_main_config()
-
-    def load_main_config(self):
-        """Return a dict with key-value pairs for the main configuration."""
-        with TinyDB(self._db_file) as cdb:
-            ctable = cdb.table(self._db_name)
-            out = {}
-            for c in ctable:
-                out[c['context']] = c['value']
-        return out
-
-    def get_keys_for_data_source(self, data_source):
-        """Get a list of keys for a given data source from the configuration database."""
-
-        # List to be filled and returned
-        out = []
-
-        # Check if ticker file exists.
-        if not os.path.isfile(self.main_config['path_data_sources_db']):
-            h.print_timestamped_text(
-                "Error: database file [{}] does not exist.".format(
-                    self.main_config['path_data_sources_db']
-                )
-            )
-            return out
-
-        # Query the DB for the requested keys
-        with TinyDB(self.main_config['path_data_sources_db']) as db:
-            config_table = db.table(self.main_config['tabnm_data_sources'])
-            qy = Query()
-            res = config_table.search(qy["data_source"] == data_source)
-
-        if len(res) > 0:
-            for c in res:
-                if c is not None:
-                    out.append(c)
-
-        return out
+    def __init__(self, root_dir, config):
+        self._config = config
+        self.root_dir = root_dir
 
     def get_ds_limits(self, data_source):
         """
         Get limits for a specific data_source. Returns a dict like:
         {'data_source'='XXXXX','day_limit'=0,'hour_limit'=0, 'minute_limit': 0}
         """
+        # Local variables
+        path_db = self.root_dir + '/' + self._config['path_db']
+        table_name = self._config['table_name']
 
         # Open the database
-        with TinyDB(self.main_config['path_ds_limits_db']) as db:
-            config_table = db.table(self.main_config['tabnm_ds_limits'])
-            qy = Query()
-            res = config_table.search(qy.data_source == data_source)
+        with TinyDB(path_db) as db:
+            config_table = db.table(table_name)
+            res = config_table.search(Query()['data_source'] == data_source)
 
-            if len(res) == 0:
-                return {'data_source': data_source, 'day_limit': 0, 'hour_limit': 0, 'minute_limit': 0}
-            elif len(res) == 1:
+            if len(res) == 1:
                 return res[0]
             else:
                 return {'data_source': data_source, 'day_limit': 0, 'hour_limit': 0, 'minute_limit': 0}
 
-
-    @staticmethod
     def set_ds_limits(self, data_source_dict):
         """
         Set limits opposed for a specific data_source. Takes a dict data_source_dict like:
         {'data_source'='XXXXX','day_limit'=0,'hour_limit'=0, 'minute_limit': 0}
         """
+        # Local variables
+        path_db = self.root_dir + '/' + self._config['path_db']
+        table_name = self._config['table_name']
 
         # Open the database
-        with TinyDB(self.main_config['path_ds_limits_db']) as db:
+        with TinyDB(path_db) as db:
             # Open the ticker table and create query object
-            stats_table_obj = db.table(self.main_config['tabnm_ds_limits'])
+            stats_table_obj = db.table(table_name)
             qy = Query()
 
             # Insert the new ticker info
