@@ -33,11 +33,11 @@ class Helpers:
 
     @staticmethod
     def sleep_handler(nr_of_secs=1):
-        """Sleeps for a number of seconds, while printing the remaining number of seconds, every 5th seconds."""
+        """Sleeps for a number of seconds, while printing the remaining number of seconds, every 15th seconds."""
 
         print("Sleeping {} sec > ".format(nr_of_secs), end="", flush=True)
         for x in range(nr_of_secs, 0, -1):
             time.sleep(1)
-            if x % 5 == 0:
+            if x % 15 == 0:
                 print(".{}".format(x), end="", flush=True)
         print('Wake up!')

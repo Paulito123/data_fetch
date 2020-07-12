@@ -32,7 +32,7 @@ class DataSource:
 
         # local variables
         out = []
-        path_db = self._root_dir + '/' + self._config['path_db']
+        path_db = self.root_dir + '/' + self._config['path_db']
 
         # Check if ticker file exists.
         if not os.path.isfile(path_db):

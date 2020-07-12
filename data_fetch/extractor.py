@@ -29,7 +29,7 @@ import time
 
 class Extractor:
 
-    def __index__(self, root_dir, config, api_key, data_source):
+    def __init__(self, root_dir, config, api_key, data_source):
         self._config = config
         self._api_key = api_key
         self.root_dir = root_dir
@@ -47,20 +47,31 @@ class Extractor:
 
     def fetch_timeseries_alpha_vantage(self, ticker_symbol):
         """
-        Fetch data for 1 symbol and timeframe, and write it to a sheet in an existing or not yet existing excel file.
+        Fetch data for 1 symbol and timeframe, and write it to a flat file.
+        Returns the status of the result of the operation.
         """
         timestr = time.strftime("%Y%m%d%H%M%S")
-        fq_filename = self._config['data_output_path'] + ticker_symbol + '_' + self._config['interval'] + '_' + timestr
+        fq_filename = \
+            self._config['fq_data_output_path'] + ticker_symbol + '_' + self._config['interval'] + '_' + timestr
 
         # define exchange bridge
         ts = avts(key=self._api_key, output_format='pandas')
 
         # try to fetch data and write to excel
         try:
-            data, meta_data = ts.get_intraday(symbol=ticker_symbol, interval=self._config['interval'], outputsize='full')
-            h.print_timestamped_text('Finished [' + ticker_symbol + ':' + self._config['interval'] + '] successfully.')
+            data, meta_data = ts.get_intraday(
+                symbol=ticker_symbol,
+                interval=self._config['interval'],
+                outputsize='full')
             data.to_csv(fq_filename)
-            return True
+            h.print_timestamped_text('Finished [' + ticker_symbol + ':' + self._config['interval'] + '] successfully.')
+            return 'succeeded'
+        except FileNotFoundError:
+            h.print_timestamped_text(
+                'Error: file {} was not found!'.format(fq_filename)
+            )
         except:
-            h.print_timestamped_text('Issue with interval [' + self._config['interval'] + '] for [' + ticker_symbol + ']!!!')
-            return False
+            h.print_timestamped_text(
+                'Error: issue with interval [' + self._config['interval'] + '] for [' + ticker_symbol + ']!!!'
+            )
+            return 'error'

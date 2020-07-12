@@ -116,7 +116,7 @@ class Ticker:
 
         # Check if db exists.
         if not os.path.isfile(db_file):
-            h.print_timestamped_text("database file [{}] does not exist.".format(db_file))
+            h.print_timestamped_text("Error: database file [{}] does not exist.".format(db_file))
             return False
 
         # Check if ticker info is well formatted.
@@ -139,12 +139,10 @@ class Ticker:
                                      'last_update_date_epoch': dp.parse(ticker_info['last_update_date']).timestamp(),
                                      'last_status': ticker_info['last_status']},
                                     Query()['ticker'] == ticker_info['ticker'])
-                
-                h.print_timestamped_text('Symbol [{}] upserted.'.format(ticker_info['ticker']))
 
             return True
         except:
-            h.print_timestamped_text("Error: cannot open database.")
+            h.print_timestamped_text("Error: cannot upsert ticker info.")
             return False
 
     def get_tickers_later_then(self, relevance_date_as_from):

@@ -41,17 +41,18 @@ def main():
     config.read(conf_file)
 
     # initialize ticker object
-    ticker_obj = tckrs.Ticker(config['ticker'])
+    ticker_obj = tckrs.Ticker(root_dir, config['ticker'])
 
     # Try get Nasdaq file...
-    target_file = root_dir + '/' + config['tickers']['path_file']
+    target_file = root_dir + '/' + config['ticker']['path_file']
     nq_fetched = ticker_obj.fetch_nq_ticker_file()
     if not nq_fetched and not os.path.isfile(target_file):
         print("EXIT APPLICATION: Missing ticker file!")
         exit()
     else:
         # Update ticker database
-        ticker_obj.nasdaq_ticker_file_to_db_sync()
+        #ticker_obj.nasdaq_ticker_file_to_db_sync()
+        pass
 
     # Iterate keys in endless loop
     while True:
@@ -61,6 +62,9 @@ def main():
 
         # Iterate data sources
         for ds in ds_list:
+            # Record start_date_time
+            sdt = datetime.now().isoformat()
+
             # Create an extractor object
             extractor_obj = extr.Extractor(root_dir, config['extractor'], ds['key'], ds['data_source'])
 
@@ -86,48 +90,58 @@ def main():
             calls_left_day = calls_left['day_calls_left']
             calls_left_hour = calls_left['hour_calls_left']
             calls_left_minute = calls_left['minute_calls_left']
-            stats_counter = 0
+            calls_counter = 0
             i_can_pass = True
 
             if limits['day_limit'] == 0 or calls_left_day > 0:
                 while i_can_pass:
+                    symbol = symbol_list[symbol_iterator]['ticker']
 
-                    if  (limits['day_limit'] == 0 or calls_left_day > 0) and \
-                        (limits['hour_limit'] == 0 or calls_left_hour > 0) and \
-                        (limits['minute_limit'] == 0 or calls_left_minute > 0) and \
-                        symbol_iterator < len(symbol_list):
+                    if (limits['day_limit'] == 0 or calls_left_day > 0) and \
+                       (limits['hour_limit'] == 0 or calls_left_hour > 0) and \
+                       (limits['minute_limit'] == 0 or calls_left_minute > 0) and \
+                       symbol_iterator < len(symbol_list):
+
                         # We can perform 1 call...
-                        data_fetched = extractor_obj.fetch_timeseries(symbol_list[symbol_iterator]['ticker'])
+                        fetch_status = extractor_obj.fetch_timeseries(symbol)
 
-                        stats_counter += 1
+                        # Adjust counters
+                        calls_counter += 1
                         symbol_iterator += 1
+
+                        # Update tickers DB
+                        ticker_obj.update_ticker_status({
+                            'ticker': symbol,
+                            'last_update_date': datetime.now().isoformat(),
+                            'last_status': fetch_status
+                        })
+
                         # Decrease limits
+                        calls_left_day = calls_left_day - 1 if limits['day_limit'] != 0 else -1
+                        calls_left_hour = calls_left_hour - 1 if limits['hour_limit'] != 0 else -1
+                        calls_left_minute = calls_left_minute - 1 if limits['minute_limit'] != 0 else -1
 
-                        # Write back to
-                    #elif :
-                        # Check why we cannot pass
+                        if calls_left_day == 0:
+                            # Escape the while loop
+                            i_can_pass = False
+                        elif calls_left_hour == 0:
+                            # sleep for one hour
+                            dh.sleep_handler(3600)
+                            # Reset minute counter
+                            calls_left_minute = calls_left_minute if calls_left_minute != 0 else limits['minute_limit']
+                        elif calls_left_minute == 0:
+                            # sleep for one minute
+                            dh.sleep_handler(60)
+                            # Reset minute counter
+                            calls_left_minute = limits['minute_limit']
 
-
-
-
-
-
-
-
-
-
-        # Fetch all tickers within the result of the search with limits
-
-        # Start main iteration with checks on ds limits
-
-        # Fetch data and keep the stats
-
-        # Write the result of a fetch back to the tickers database
-
-        # Write stats back at end of day or at end of key iteration
-
-        #dh.sleep_handler(3600)
-        break
+            # Write stats back to db    {'data_source'='','conn_name'='','start_datetime'='','calls'=0}
+            dl_stats_obj.append_dl_stats({
+                'data_source': ds['data_source'],
+                'conn_name': ds['name'],
+                'start_datetime': sdt,
+                'calls': calls_counter
+            })
 
 if __name__ == "__main__":
     main()

@@ -38,7 +38,7 @@ class DownloadStats:
         {'data_source'='','conn_name'='','start_datetime'='','calls'=0}
         """
         # Local variables
-        stats_db = self._config['path_db']
+        stats_db = self.root_dir + '/' + self._config['path_db']
         stats_table = self._config['table_name']
 
         # Open the database
@@ -60,9 +60,10 @@ class DownloadStats:
         """
         Returns number of calls left for a connection. Output format is:
         {'data_source'='','conn_name'='', 'day_calls_left': 0, 'hour_calls_left': 0, 'minute_calls_left': 0}
+        When there is no limit, -1 is returned.
         """
         # Local variables
-        stats_db = self._config['path_db']
+        stats_db = self.root_dir + '/' + self._config['path_db']
         stats_table = self._config['table_name']
 
         # Calculate epoch times for day and hour limits
@@ -104,20 +105,7 @@ class DownloadStats:
                         if entry['start_datetime_epoch'] > ts_min:
                             calls_made_minute += entry['calls']
 
-                calls_left_day = -1
-                calls_left_hour = -1
-                calls_left_minute = -1
-
-                if limits['day_limit'] > 0:
-                    calls_left_day = limits['day_limit'] - calls_made_day
-
-                if limits['hour_limit'] > 0:
-                    calls_left_hour = limits['hour_limit'] - calls_made_hour
-
-                if limits['minute_limit'] > 0:
-                    calls_left_minute = limits['minute_limit'] - calls_made_minute
-
                 return {'data_source': data_source, 'conn_name': conn_name, 
-                        'day_calls_left': calls_left_day, 
-                        'hour_calls_left': calls_left_hour, 
-                        'minute_calls_left': calls_left_minute}
+                        'day_calls_left': -1 if limits['day_limit'] == 0 else limits['day_limit'] - calls_made_day,
+                        'hour_calls_left': -1 if limits['hour_limit'] == 0 else limits['hour_limit'] - calls_made_hour,
+                        'minute_calls_left': -1 if limits['minute_limit'] == 0 else limits['minute_limit'] - calls_made_minute}
