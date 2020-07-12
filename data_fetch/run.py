@@ -32,7 +32,7 @@ from data_fetch.helpers import Helpers as dh
 from datetime import datetime, timedelta
 
 
-def main():
+def ds_by_ds():
     """Main method of the data_fetch application"""
     # Load configurations
     root_dir = os.path.dirname(os.path.abspath(__file__)) + '/..'
@@ -51,7 +51,7 @@ def main():
         exit()
     else:
         # Update ticker database
-        #ticker_obj.nasdaq_ticker_file_to_db_sync()
+        ticker_obj.nasdaq_ticker_file_to_db_sync()
         pass
 
     # Iterate keys in endless loop
@@ -136,12 +136,13 @@ def main():
                             calls_left_minute = limits['minute_limit']
 
             # Write stats back to db    {'data_source'='','conn_name'='','start_datetime'='','calls'=0}
-            dl_stats_obj.append_dl_stats({
-                'data_source': ds['data_source'],
-                'conn_name': ds['name'],
-                'start_datetime': sdt,
-                'calls': calls_counter
-            })
+            if calls_counter > 0:
+                dl_stats_obj.append_dl_stats({
+                    'data_source': ds['data_source'],
+                    'conn_name': ds['name'],
+                    'start_datetime': sdt,
+                    'calls': calls_counter
+                })
 
 if __name__ == "__main__":
-    main()
+    ds_by_ds()
