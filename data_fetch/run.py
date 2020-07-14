@@ -18,6 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ###############################################################################
+import sys
 import os.path
 import configparser
 
@@ -51,7 +52,7 @@ def ds_by_ds():
         exit()
     else:
         # Update ticker database
-        ticker_obj.nasdaq_ticker_file_to_db_sync()
+        #ticker_obj.nasdaq_ticker_file_to_db_sync()
         pass
 
     # Iterate keys in endless loop
@@ -145,4 +146,9 @@ def ds_by_ds():
                 })
 
 if __name__ == "__main__":
-    ds_by_ds()
+    try:
+        ds_by_ds()
+    except KeyboardInterrupt:
+        print >> sys.stderr, '\nExiting by user request.\n'
+        sys.exit(0)
+
