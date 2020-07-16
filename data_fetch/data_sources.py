@@ -54,3 +54,23 @@ class DataSource:
                     out.append(c)
 
         return out
+
+    def get_data_source_by_name(self, name):
+        """Get a list of keys for a given data source from the configuration database."""
+
+        # local variables
+        path_db = self.root_dir + '/' + self._config['path_db']
+
+        # Check if ticker file exists.
+        if not os.path.isfile(path_db):
+            h.print_timestamped_text(
+                "Error: database file [{}] does not exist.".format(
+                    self._config['path_db']
+                )
+            )
+            return []
+
+        # Query the DB for the requested keys
+        with TinyDB(path_db) as db:
+            ds_table = db.table(self._config['table_name'])
+            return ds_table.search((Query()["data_source"] == name) and (Query()["enabled"] == 1))

@@ -33,7 +33,7 @@ from data_fetch.helpers import Helpers as dh
 from datetime import datetime, timedelta
 
 
-def ds_by_ds():
+def nq_ds_by_ds():
     """Main method of the data_fetch application"""
     # Load configurations
     root_dir = os.path.dirname(os.path.abspath(__file__)) + '/..'
@@ -42,10 +42,11 @@ def ds_by_ds():
     config.read(conf_file)
 
     # initialize ticker object
-    ticker_obj = tckrs.Ticker(root_dir, config['ticker'])
+    new_conf = {'ticker': config['ticker'], 'nasdaq': config['nasdaq']}
+    ticker_obj = tckrs.Ticker(root_dir, new_conf)
 
     # Try get Nasdaq file...
-    target_file = root_dir + '/' + config['ticker']['path_file']
+    target_file = root_dir + '/' + config['nasdaq']['path_file']
     nq_fetched = ticker_obj.fetch_nq_ticker_file()
     if not nq_fetched and not os.path.isfile(target_file):
         print("EXIT APPLICATION: Missing ticker file!")
@@ -78,7 +79,7 @@ def ds_by_ds():
             date_as_from = (
                     datetime.now() - timedelta(days=int(config['extractor']['days_before_refresh']))).isoformat()
             symbol_iterator = 0
-            symbol_list = ticker_obj.get_tickers_later_then(date_as_from)
+            symbol_list = ticker_obj.get_nq_tickers_later_then(date_as_from)
 
             # Get dl_stats and limits for data source
             # {'data_source' = '', 'conn_name' = '', 'day_calls_left': 0, 'hour_calls_left': 0, 'minute_calls_left': 0}
@@ -111,7 +112,7 @@ def ds_by_ds():
                         symbol_iterator += 1
 
                         # Update tickers DB
-                        ticker_obj.update_ticker_status({
+                        ticker_obj.update_nq_ticker_status({
                             'ticker': symbol,
                             'last_update_date': datetime.now().isoformat(),
                             'last_status': fetch_status
@@ -145,9 +146,48 @@ def ds_by_ds():
                     'calls': calls_counter
                 })
 
+def fh_by_periods():
+    ''''''
+    # Load configurations
+    root_dir = os.path.dirname(os.path.abspath(__file__)) + '/..'
+    conf_file = root_dir + '/config/data_fetch.conf'
+    config = configparser.ConfigParser()
+    config.read(conf_file)
+    periods = [{"from": "2020-01-01 00:00:00", "to": "2020-03-31 23:59:59"},
+               {"from": "2020-04-01 00:00:00", "to": "2020-06-30 23:59:59"},
+               {"from": "2020-07-01 00:00:00", "to": "2020-07-15 23:59:59"}]
+
+    # initialize ticker object
+    new_conf = {'ticker': config['ticker'], 'sp500': config['sp500']}
+    ticker_obj = tckrs.Ticker(root_dir, new_conf)
+
+    # Try get sp500 file...
+    target_file = root_dir + '/' + config['sp500']['path_file']
+    if not os.path.isfile(target_file):
+        print("EXIT APPLICATION: Missing ticker file!")
+        exit()
+    else:
+        # Update ticker database
+        #ticker_obj.sp500_ticker_file_to_db_sync()
+        pass
+
+    symbol_list = ticker_obj.get_sp500_tickers()
+    data_source_obj = datas.DataSource(root_dir, config['data_source'])
+    ds_list = data_source_obj.get_data_source_by_name('finnhub')
+
+    # Iterate data sources
+    for ds in ds_list:
+        extractor_obj = extr.Extractor(root_dir, config['extractor'], ds['key'], ds['data_source'])
+
+        for period in periods:
+            for ticker_obj in symbol_list:
+                extractor_obj.fetch_timeseries(ticker_obj['ticker'], period['from'], period['to'])
+
+
 if __name__ == "__main__":
     try:
-        ds_by_ds()
+        #nq_ds_by_ds()
+        fh_by_periods()
     except KeyboardInterrupt:
         print >> sys.stderr, '\nExiting by user request.\n'
         sys.exit(0)

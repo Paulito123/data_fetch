@@ -41,3 +41,31 @@ class Helpers:
             if x % 15 == 0:
                 print(".{}".format(x), end="", flush=True)
         print('Wake up!')
+
+    @staticmethod
+    def datetime_string_to_epoch(dt_str):
+        try:
+            epoch = datetime.strptime(dt_str, "%Y-%m-%dT%H:%M:%S.%fZ").timestamp()
+            return int(epoch)
+        except ValueError:
+            pass
+
+        try:
+            epoch = datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S").timestamp()
+            return int(epoch)
+        except ValueError:
+            pass
+
+        try:
+            epoch = datetime.strptime(dt_str, "%Y-%m-%d %H:%M").timestamp()
+            return int(epoch)
+        except ValueError:
+            pass
+
+        try:
+            epoch = datetime.strptime(dt_str, "%Y-%m-%d").timestamp()
+            return int(epoch)
+        except ValueError:
+            pass
+
+        return 0
