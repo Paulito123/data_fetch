@@ -18,27 +18,26 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ###############################################################################
-from data_fetch.helpers import Helpers as h
-from tinydb import TinyDB, Query
+import pandas as pd
+from pathlib import Path
+import time
 
 
-class DSLimits:
+class DataPlakker:
 
     def __init__(self, root_dir, config):
         self._config = config
         self.root_dir = root_dir
 
-    def get_ds_limits(self, data_source):
-        """
-        Get limits for a specific data_source. Returns a dict like:
-        {'data_source'='XXXXX','day_limit'=0,'hour_limit'=0, 'minute_limit': 0}
-        """
-        # Local variables
-        if self._config.has_option(data_source, 'day_limit') and \
-           self._config.has_option(data_source, 'hour_limit') and \
-           self._config.has_option(data_source, 'minute_limit'):
-            return {'day_limit': int(self._config[data_source]['day_limit']),
-                    'hour_limit': int(self._config[data_source]['hour_limit']),
-                    'minute_limit': int(self._config[data_source]['minute_limit'])}
-        else:
-            return {'day_limit': 0, 'hour_limit': 0, 'minute_limit': 0}
+    def merge_files_by_symbol(self, symbol, index_column_name, data_directory, interval, target_directory):
+        '''Merge multiple files into one by symbol.'''
+        search_string = symbol + '_' + interval +  r'_*'
+        dfs = [pd.read_csv(p, parse_dates=[index_column_name]) for p in Path(data_directory).glob(search_string)]
+        df = pd.concat(dfs).drop_duplicates(index_column_name).set_index(index_column_name).sort_index()
+
+        min_date = time.strftime('%Y%m%d', time.localtime(int(df.index.min())))
+        max_date = time.strftime('%Y%m%d', time.localtime(int(df.index.max())))
+
+        fq_filename = target_directory + '/' + symbol + '_' + interval + '_' + min_date + '_' + max_date
+        df.to_csv(fq_filename, encoding='utf-8', index=False)
+

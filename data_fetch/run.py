@@ -153,9 +153,8 @@ def fh_by_periods():
     conf_file = root_dir + '/config/data_fetch.conf'
     config = configparser.ConfigParser()
     config.read(conf_file)
-    periods = [{"from": "2020-01-01 00:00:00", "to": "2020-03-31 23:59:59"},
-               {"from": "2020-04-01 00:00:00", "to": "2020-06-30 23:59:59"},
-               {"from": "2020-07-01 00:00:00", "to": "2020-07-15 23:59:59"}]
+    periods = [{"from": "2020-01-01 00:00:00", "to": "2020-06-30 23:59:59"},
+               {"from": "2020-07-01 00:00:00", "to": "2020-07-16 23:59:59"}]
 
     # initialize ticker object
     new_conf = {'ticker': config['ticker'], 'sp500': config['sp500']}
