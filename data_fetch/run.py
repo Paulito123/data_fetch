@@ -27,6 +27,7 @@ import data_fetch.data_sources as datas
 import data_fetch.tickers as tckrs
 import data_fetch.data_source_limits as lims
 import data_fetch.download_stats as dls
+import data_fetch.data_merge as dm
 
 from data_fetch.helpers import Helpers as dh
 
@@ -182,11 +183,31 @@ def fh_by_periods():
             for ticker_obj in symbol_list:
                 extractor_obj.fetch_timeseries(ticker_obj['ticker'], period['from'], period['to'])
 
+def merge_files():
+    ''''''
+    # Load configurations
+    root_dir = os.path.dirname(os.path.abspath(__file__)) + '/..'
+    conf_file = root_dir + '/config/data_fetch.conf'
+    config = configparser.ConfigParser()
+    config.read(conf_file)
+
+    # initialize ticker object
+    new_conf = {'ticker': config['ticker'], 'sp500': config['sp500']}
+    ticker_obj = tckrs.Ticker(root_dir, new_conf)
+    symbol_list = ticker_obj.get_sp500_tickers()
+
+    source_path = config['data_merge']['data_src_path'] + '/' + 'finnhub'
+    target_path = source_path + '/' + 'merged'
+
+    # Iterate data sources
+    for ticker_obj in symbol_list:
+        dm.DataPlakker.merge_files_by_symbol(ticker_obj['ticker'], 't', source_path, '1', target_path)
 
 if __name__ == "__main__":
     try:
         #nq_ds_by_ds()
-        fh_by_periods()
+        #fh_by_periods()
+        merge_files()
     except KeyboardInterrupt:
         print >> sys.stderr, '\nExiting by user request.\n'
         sys.exit(0)
