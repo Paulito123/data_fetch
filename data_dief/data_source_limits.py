@@ -18,7 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ###############################################################################
-from data_fetch.helpers import Helpers as h
+from data_dief.helpers import Helpers as h
 from tinydb import TinyDB, Query
 
 

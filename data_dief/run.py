@@ -22,23 +22,23 @@ import sys
 import os.path
 import configparser
 
-import data_fetch.extractor as extr
-import data_fetch.data_sources as datas
-import data_fetch.tickers as tckrs
-import data_fetch.data_source_limits as lims
-import data_fetch.download_stats as dls
-import data_fetch.data_merge as dm
+import data_dief.extractor as extr
+import data_dief.data_sources as datas
+import data_dief.tickers as tckrs
+import data_dief.data_source_limits as lims
+import data_dief.download_stats as dls
+import data_dief.data_merge as dm
 
-from data_fetch.helpers import Helpers as dh
+from data_dief.helpers import Helpers as dh
 
 from datetime import datetime, timedelta
 
 
 def nq_ds_by_ds():
-    """Main method of the data_fetch application"""
+    """Main method of the data_dief application"""
     # Load configurations
     root_dir = os.path.dirname(os.path.abspath(__file__)) + '/..'
-    conf_file = root_dir + '/config/data_fetch.conf'
+    conf_file = root_dir + '/config/data_dief.conf'
     config = configparser.ConfigParser()
     config.read(conf_file)
 
@@ -106,7 +106,7 @@ def nq_ds_by_ds():
                        symbol_iterator < len(symbol_list):
 
                         # We can perform 1 call...
-                        fetch_status = extractor_obj.fetch_timeseries(symbol)
+                        fetch_status = extractor_obj.fetch_timeseries(symbol, '1min')
 
                         # Adjust counters
                         calls_counter += 1
@@ -151,11 +151,13 @@ def fh_by_periods():
     ''''''
     # Load configurations
     root_dir = os.path.dirname(os.path.abspath(__file__)) + '/..'
-    conf_file = root_dir + '/config/data_fetch.conf'
+    conf_file = root_dir + '/config/data_dief.conf'
     config = configparser.ConfigParser()
     config.read(conf_file)
-    periods = [{"from": "2020-01-01 00:00:00", "to": "2020-06-30 23:59:59"},
-               {"from": "2020-07-01 00:00:00", "to": "2020-07-16 23:59:59"}]
+    periods = [{"from": "2019-07-01 00:00:00", "to": "2019-09-30 23:59:59"},
+               {"from": "2019-10-01 00:00:00", "to": "2019-12-31 23:59:59"},
+               {"from": "2020-01-01 00:00:00", "to": "2020-03-31 23:59:59"},
+               {"from": "2020-04-01 00:00:00", "to": "2020-07-17 23:59:59"}]
 
     # initialize ticker object
     new_conf = {'ticker': config['ticker'], 'sp500': config['sp500']}
@@ -175,19 +177,30 @@ def fh_by_periods():
     data_source_obj = datas.DataSource(root_dir, config['data_source'])
     ds_list = data_source_obj.get_data_source_by_name('finnhub')
 
+    counter = 60
+
     # Iterate data sources
     for ds in ds_list:
         extractor_obj = extr.Extractor(root_dir, config['extractor'], ds['key'], ds['data_source'])
-
+        trigger = 0
         for period in periods:
             for ticker_obj in symbol_list:
-                extractor_obj.fetch_timeseries(ticker_obj['ticker'], period['from'], period['to'])
+
+                #if ticker_obj['ticker'] == 'TTWO':
+                #    trigger = 1
+
+                if trigger == 1:
+                    extractor_obj.fetch_timeseries(ticker_obj['ticker'], '1', period['from'], period['to'])
+                    counter -= 1
+                    if counter == 0:
+                        dh.sleep_handler(5)
+                        counter = 60
 
 def merge_files():
     ''''''
     # Load configurations
     root_dir = os.path.dirname(os.path.abspath(__file__)) + '/..'
-    conf_file = root_dir + '/config/data_fetch.conf'
+    conf_file = root_dir + '/config/data_dief.conf'
     config = configparser.ConfigParser()
     config.read(conf_file)
 
@@ -207,7 +220,8 @@ if __name__ == "__main__":
     try:
         #nq_ds_by_ds()
         #fh_by_periods()
-        merge_files()
+        #merge_files()
+        pass
     except KeyboardInterrupt:
         print >> sys.stderr, '\nExiting by user request.\n'
         sys.exit(0)

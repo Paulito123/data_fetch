@@ -16,7 +16,7 @@
 #
 ###############################################################################
 from alpha_vantage.timeseries import TimeSeries
-from data_fetch.helpers import Helpers as h
+from data_dief.helpers import Helpers as h
 from tinydb import TinyDB, Query
 import os.path
 import time

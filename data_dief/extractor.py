@@ -19,7 +19,7 @@
 #
 ###############################################################################
 from datetime import datetime, timedelta
-from data_fetch.helpers import Helpers as h
+from data_dief.helpers import Helpers as h
 from tinydb import TinyDB, Query
 import dateutil.parser as dp
 import finnhub
@@ -45,7 +45,7 @@ class Extractor:
                 }
             )
 
-    def fetch_timeseries(self, ticker_symbol, from_date=None, to_date=None):
+    def fetch_timeseries(self, ticker_symbol, interval, from_date=None, to_date=None):
         """Dispatch method"""
         method_name = sys._getframe().f_code.co_name + '_' + str(self.data_source)
 
@@ -53,9 +53,9 @@ class Extractor:
         method = getattr(self, method_name, lambda: [])
 
         # Call the method as we return it
-        return method(ticker_symbol, from_date, to_date)
+        return method(ticker_symbol, interval, from_date, to_date)
 
-    def fetch_timeseries_alpha_vantage(self, ticker_symbol, from_date, to_date):
+    def fetch_timeseries_alpha_vantage(self, ticker_symbol, interval, from_date, to_date):
         """
         Fetch data for 1 symbol and timeframe, and write it to a flat file.
         Returns the status of the result of the operation.
@@ -63,7 +63,7 @@ class Extractor:
         timestr = time.strftime("%Y%m%d%H%M%S")
         fq_filename = \
             self._config['fq_data_output_path'] + '/' + self.data_source + '/' + \
-            ticker_symbol + '_' + self._config['interval'] + '_' + timestr
+            ticker_symbol + '_' + interval + '_' + timestr
 
         # define exchange bridge
         ts = avts(key=self._api_key, output_format='pandas')
@@ -72,21 +72,21 @@ class Extractor:
         try:
             data, meta_data = ts.get_intraday(
                 symbol=ticker_symbol,
-                interval=self._config['interval'],
+                interval=interval,
                 outputsize='full')
             data.to_csv(fq_filename)
-            h.print_timestamped_text('Finished [' + ticker_symbol + ':' + self._config['interval'] + '] successfully.')
+            h.print_timestamped_text('Finished [' + ticker_symbol + ':' + interval + '] successfully.')
             return {'status': 'succeeded'}
         except FileNotFoundError:
             err_msg = 'Error: file {} was not found!'.format(fq_filename)
             h.print_timestamped_text(err_msg)
             return {'status': 'error', 'message': err_msg}
         except:
-            err_msg = 'Error: issue with interval [' + self._config['interval'] + '] for [' + ticker_symbol + ']!!!'
+            err_msg = 'Error: issue with interval [' + interval + '] for [' + ticker_symbol + ']!!!'
             h.print_timestamped_text(err_msg)
             return {'status': 'error', 'message': err_msg}
 
-    def fetch_timeseries_finnhub(self, ticker_symbol, from_date, to_date):
+    def fetch_timeseries_finnhub(self, ticker_symbol, interval, from_date, to_date):
         """
         from=1590988249
         to=1591852249
@@ -95,7 +95,7 @@ class Extractor:
         if not from_date is None and not to_date is None:
             fq_filename = \
                 self._config['fq_data_output_path'] + '/' + self.data_source + '/' + ticker_symbol + '_' + \
-                self._config['interval'] + '_' + from_date[:10] + '-' + to_date[:10]
+                interval + '_' + from_date[:10] + '-' + to_date[:10]
         else:
             err_msg = "Error: datetime string is empty."
             print(err_msg)
@@ -108,10 +108,12 @@ class Extractor:
             err_msg="Error: datetime string could not be converted to epoch time."
             return {'status': 'error', 'message': err_msg}
 
+        #print('{}:{}:{}:{}'.format(ticker_symbol, interval, from_epoch, to_epoch))
+
         try:
             finnhub_client = finnhub.DefaultApi(finnhub.ApiClient(self.configuration))
 
-            a = finnhub_client.stock_candles(ticker_symbol, self._config['interval'], from_epoch, to_epoch)
+            a = finnhub_client.stock_candles(ticker_symbol, interval, from_epoch, to_epoch)
             a = a.to_dict()
 
             if a['s'] == 'ok':
@@ -122,7 +124,7 @@ class Extractor:
 
             df = pd.DataFrame({key: pd.Series(value) for key, value in a.items()})
             df.to_csv(fq_filename, encoding='utf-8', index=False)
-            h.print_timestamped_text('Finished [' + ticker_symbol + ':' + self._config['interval'] + '] successfully.')
+            h.print_timestamped_text('Finished [' + ticker_symbol + ':' + interval + '] successfully.')
             return {'status': 'succeeded'}
 
         except FileNotFoundError:
@@ -130,6 +132,6 @@ class Extractor:
             h.print_timestamped_text(err_msg)
             return {'status': 'error', 'message': err_msg}
         except:
-            err_msg='Error: issue with interval [' + self._config['interval'] + '] for [' + ticker_symbol + ']!!!'
+            err_msg='Error: issue with interval [' + interval + '] for [' + ticker_symbol + ']!!!'
             h.print_timestamped_text(err_msg)
             return {'status': 'error', 'message': err_msg}

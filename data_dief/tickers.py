@@ -27,7 +27,7 @@ import os.path
 import re
 from contextlib import closing
 from tinydb import *
-from data_fetch.helpers import Helpers as h
+from data_dief.helpers import Helpers as h
 import dateutil.parser as dp
 
 

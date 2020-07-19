@@ -21,7 +21,7 @@
 import pandas as pd
 import os
 from pathlib import Path
-from data_fetch.helpers import Helpers as h
+from data_dief.helpers import Helpers as h
 import time
 
 
@@ -42,7 +42,7 @@ class DataPlakker:
             max_date = time.strftime('%Y%m%d', time.localtime(int(df.index.max())))
 
             fq_filename = target_directory + '/' + symbol + '_' + interval + '_' + min_date + '_' + max_date
-            df.to_csv(fq_filename, encoding='utf-8', index=False)
+            df.to_csv(fq_filename, encoding='utf-8', index=True)
 
             counter = 0
             if data_directory != target_directory:
@@ -52,7 +52,7 @@ class DataPlakker:
                 h.print_timestamped_text('{} files removed.'.format(counter))
 
             h.print_timestamped_text('Successful merge for [' + interval + ':' + symbol + ']. {} files removed.'
-                                     .format(counter = 0))
+                                     .format(counter))
 
         except:
             err_msg = 'Error: issue with interval [' + interval + '] for [' + symbol + ']!'
